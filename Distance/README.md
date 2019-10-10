@@ -2,7 +2,7 @@
 This set of codes is used for distance prediction by TSA-Seq data (smoothed) and calculation of distance residuals between different TSA-Seq conditions.
 
 ## Distance calculation
-Cytological distances (um) (x) to a targetted nuclear body are predicted from TSA-Seq signals (y) by a fomula y = y0 + A*e^(R0*x). (See paper Method)
+Cytological distances (um) (x) to the targetted nuclear body are predicted from TSA-Seq signals (y) by a fomula y = y0 + A*e^(R0*x). (See paper Method)
 
 ### Find y0, A and R0
 
