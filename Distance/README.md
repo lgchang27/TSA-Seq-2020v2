@@ -21,8 +21,18 @@ R0 is based on FISH calibration and fitting (see paper Method and Sup Table 2)
 
 ```shell
 python TSAtoDistance_v2_TSA2.0.py -i TSA-Seq_hanning_20kbx21.wig -o TSA-Seq_hanning_20kbx21_distance -y0 xx -A yy -R0 zz -g utilities/hg38F.genome -gap utilities/hg38_Gap.bed
-
-#Genome size file hg38F.genome was for female cell line (K562), hg38M.genome was for male cell lines (H1, HCT116, HFFc6).
 ```
 
 This code will generate a ditance track (TSA-Seq_hanning_20kbx21_distance.bw) that was used to generate figure 1e (middle) and supplementary figure 4a (top).
+
+## Residual calculation
+
+```shell
+python distance_residual_v2_TSA2.0.py -w1 TSA_Seq_hanning_20kbx21_distance_condition1.wig -w2 TSA_Seq_hanning_20kbx21_distance_condition2.wig -o distance_residual -gap utilities/hg38_Gap.bed -g utilities/hg38F.genome -w 20000
+```
+This code will compare two distance .wig files, retun distance residual wig and bigwig files, and a histgram of absolute residuals between the two files.
+
+The generated residual tracks were used for figure 1e (bottom) and supplementary figure 4a (bottom).
+
+The generated residual histograms were used for figure 1f and supplementary figure 4b.
+
