@@ -4,8 +4,20 @@ This set of codes is used for distance prediction by TSA-Seq data (smoothed) and
 ## Distance calculation
 Cytological distances (um) (x) to a targetted nuclear body are predicted from TSA-Seq signals (y) by a fomula y = y0 + A*e^(R0*x). (See paper Method)
 
-### Find R0 and A
+### Find y0, A and R0
 
 ```shell
-python plot_TSA_value_TSA2.0.py -w TSA-Seq_hanning_20kbx21.wig -g utilities/hg19_Gap.bed
+python plot_TSA_value_TSA2.0.py -w TSA-Seq_hanning_20kbx21.wig -g utilities/hg38_Gap.bed
+```
+This code will find the max and min TSA-Seq enrichment scores
 
+y0 = ymin = 2^(min)
+A = ymax - ymin = 2^(max) - 2^(min)
+R0 is based on FISH calibration and fitting (see paper Method and Sup Table 2)
+
+### Distance conversion
+
+```shell
+python TSAtoDistance_v2_TSA2.0.py -i TSA-Seq_hanning_20kbx21.wig -o TSA-Seq_hanning_20kbx21_distance -y0 xx -A yy -R0 zz -g utilities/hg38F.genome -gap utilities/hg38_Gap.bed
+```
+This code will generate a ditance track (TSA-Seq_hanning_20kbx21_distance.bw) that was used to generate figure 1e (middle) and supplementary figure 4a (top).
