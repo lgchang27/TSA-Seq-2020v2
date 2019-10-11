@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Programmer : Liguo Zhang, Yang Zhang
+# Programmer : Liguo Zhang, modified form Yang Zhang's code
 # Date: 
 # Last-modified: 1 Aug 2018
 # Used for 20kb non-sliding window, take wig file to smooth and generate smoothed wig, take average for a bigger window and generate wig
