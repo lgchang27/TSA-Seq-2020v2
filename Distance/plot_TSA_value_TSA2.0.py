@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Programmer : Liguo Zhang, Yang Zhang
+# Programmer : Liguo Zhang, modified from Yang Zhang's code
 # Date: 
 # Last-modified: 19 Feb 2018 07:41:00 PM
 
