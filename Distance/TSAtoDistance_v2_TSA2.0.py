@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Programmer : Liguo Zhang, Yang Zhang
+# Programmer : Liguo Zhang, modified from Yang Zhang's code
 # Date: 
 # Last update:20181024
 
@@ -73,10 +73,7 @@ def Main():
                     continue
                 if start > gap[chrom][mm][1]:
                     continue
-                overlap_len += min((start+span), gap[chrom][mm][1]) - max(gap[chrom][mm][0], start) # multiple gap regions insides each bin
-                #if float( min((start + span),gap[chrom][mm][1]) - max(gap[chrom][mm][0], start) )/float(span) < 0.75:
-                #    continue
-                #is_overlap = True
+                overlap_len += min((start+span), gap[chrom][mm][1]) - max(gap[chrom][mm][0], start)
             assert overlap_len <= span
             if float(overlap_len)/float(span) >= 0.75:
                 is_overlap = True
