@@ -7,7 +7,7 @@ Cytological distances (um) (x) to the targetted nuclear body are predicted from 
 ### Find y0, A and R0
 
 ```shell
-python plot_TSA_value_TSA2.0.py -w TSA-Seq_hanning_20kbx21.wig -g utilities/hg38_Gap.bed
+python plot_TSA_value_TSA2.0.py -w TSA-Seq_hanning_20kbx21.wig -g utilities/hg38_Gap.bed -u 100 -l 0
 ```
 This code will find the max and min TSA-Seq enrichment scores.
 
