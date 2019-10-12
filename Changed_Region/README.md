@@ -60,7 +60,7 @@ Compare two cell lines with two replicates each, take mean (MEAN) and standard d
 
 
 ```shell
-python lzpy/residual_4datasets_compare_Pvalue_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell2-cell1_maxmin -o cell2-cell1_maxmin_Pvalue -t aa -g utilities/hg38M.genome -w 20000 -mean MEAN -std STD
+python residual_4datasets_compare_Pvalue_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell2-cell1_maxmin -o cell2-cell1_maxmin_Pvalue -t aa -g utilities/hg38M.genome -w 20000 -mean MEAN -std STD
 ```
 
 This code will generate a wig file (cell2-cell1_maxmin_Pvalue.wig) and a corresponding bigwig file to show P-values 20kb bins genome-wide.
