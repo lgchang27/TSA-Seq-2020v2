@@ -32,3 +32,23 @@ This code will generate an upper (aa) and a lower (bb) shreshold to call signifi
 The upper threshold (aa) is a positive number, residuals larger than which mean TSA-Seq signals in cell type 2 are significantly bigger than that in cell type 1.
 
 The lower threshold (bb, bb = (-1) * aa) is a negative number, residuals smaller than which mean TSA-Seq signals in cell type 1 are significantly bigger than that in cell type 2.
+
+## Identify changed domains
+Compare two cell lines with two biological replicates each, identify all 20 kb bins above the threshold generated from last step (always cell type 2 - cell type 1).
+
+Take a second threshold of domain size (100kb) and return merged segments when the region above the size threshold.
+
+```shell
+python residual_4datasets_compare_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell2-cell1_maxmin -c aa -g utilities/hg38M.genome -w 20000 -s 100000 -cell1 cell1_maxmin_ReplicateMean -cell2 cell2_maxmin_ReplicateMean
+```
+
+For regions with signals in cell type 2 significantly bigger than cell type 1: this code will output a wig file (cell2-cell1_maxmin.wig) and a bed file (cell2-cell1_maxmin.bed) with all residues, and a bed file showing the merged regions (cell2-cell1_maxmin_mergeAdjacent.bed). And it will also output corresponding bigwig and bigbed files.
+
+
+For regions with signals in cell type 1 significantly bigger than cell type 2: this code will output a wig file (otherwaycell2-cell1_maxmin.wig) and a bed file (otherwaycell2-cell1_maxmin.bed) with all residues, and a bed file showing the merged regions (otherwaycell2-cell1_maxmin_mergeAdjacent.bed). And it will also output corresponding bigwig and bigbed files.
+
+This code will also output a replicate-mean signal bw file for each cell line.
+
+This code will also output a bin residue distribution and fit of gaussian distribution.
+
+Figures 2e (middle), 2f (region bars), Supplementary Figures 10a,c (middle), 10b,d (region bars), 11a (middle), 11b (region bars) were generated from the mergeAdjacent.bed (.bb) files.
