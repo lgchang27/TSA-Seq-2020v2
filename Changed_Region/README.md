@@ -31,4 +31,4 @@ This code will generate an upper (aa) and a lower (bb) shreshold to call signifi
 
 The upper threshold (aa) is a positive number, residuals larger than which mean TSA-Seq signals in cell type 2 are significantly bigger than that in cell type 1.
 
-The lower threshold (bb) is a negative number, residuals smaller than which mean TSA-Seq signals in cell type 1 are significantly bigger than that in cell type 2.
+The lower threshold (bb, bb = (-1) * aa) is a negative number, residuals smaller than which mean TSA-Seq signals in cell type 1 are significantly bigger than that in cell type 2.
