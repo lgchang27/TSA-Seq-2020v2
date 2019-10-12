@@ -20,3 +20,10 @@ python TSA_max_min_norm_TSA2.0.py -w TSA-Seq_hanning_20kbx21.wig -q 100 -g utili
 #Genome size file hg38F.genome was for female cell line (K562), hg38M.genome was for male cell lines (H1, HCT116, HFFc6).
 ```
 This code will rescale TSA-Seq enrichmen scores into a 1 to 100 scale (showing -49 to 50 in generated wig files).
+
+## Statistics
+Statistical analysis based on biological replicates for two cell lines and generate thresholds to call changed 20kb-bins based on a P-value of 0.01
+
+```shell
+python residual_4datasets_stat_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 maxmin_hg38/maxmin0.0005/H1_E_SON_bio2_Nosliding_20kb_201807_hanning_20kbx21_maxmin0.0005_hg38.wig -c2r1 maxmin_hg38/maxmin0.0005/HFF_E_SON_Nosliding_20kb_201806_hanning_20kbx21_maxmin0.0005_hg38.wig -c2r2 maxmin_hg38/maxmin0.0005/HFF_E_SON_Nosliding_20kb_201711_hanning_20kbx21_maxmin0.0005_hg38.wig -o H1andHFF -P 0.01
+```
