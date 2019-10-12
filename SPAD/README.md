@@ -18,7 +18,7 @@ Use the percentile wig files from last step, identify bins above 95 percentile a
 python BigPercentiles_TSA2.0.py -w TSA-Seq_hanning_20kbx21_percentile.wig -o TSA-Seq_hanning_20kbx21_percentile -p 95 -g utilities/hg38F.genome -win 20000
 #Genome size file hg38F.genome was for female cell line (K562), hg38M.genome was for male cell lines (H1, HCT116, HFFc6).
 ```
-This code will generate a TSA-Seq_hanning_20kbx21_percentile_above_95.0.bed file for all 20-kb bins above 95 percentiles and a TSA-Seq_hanning_20kbx21_percentile_above_95.0_mergeAdjacent.bed (and corresponing bigbed) file for SPADs by merging adjacent 20-kb bins.
+This code will generate a TSA-Seq_hanning_20kbx21_percentile_above_95.0.bed file for all 20-kb bins above 95 percentiles and a TSA-Seq_hanning_20kbx21_percentile_above_95.0_mergeAdjacent.bed (and corresponding bigbed) file for SPADs by merging adjacent 20-kb bins.
 
 This code will also generate simple statistics of region size and number with histograms.
 
