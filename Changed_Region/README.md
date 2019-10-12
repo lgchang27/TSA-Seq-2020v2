@@ -27,6 +27,8 @@ Statistical analysis based on biological replicates for two cell lines and gener
 ```shell
 python residual_4datasets_stat_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell1AndCell2 -P 0.01
 ```
-This code will generate an upper and a lower shreshold to call significantly changed 20kb bins. 
-The upper threshold is a positive number, residuals larger than which mean TSA-Seq signals in cell type 2 are significantly bigger than that in cell type 1.
-The lower threshold is a negative number, residuals smaller than which mean TSA-Seq signals in cell type 1 are significantly bigger than that in cell type 2.
+This code will generate an upper (aa) and a lower (bb) shreshold to call significantly changed 20kb bins. 
+
+The upper threshold (aa) is a positive number, residuals larger than which mean TSA-Seq signals in cell type 2 are significantly bigger than that in cell type 1.
+
+The lower threshold (bb) is a negative number, residuals smaller than which mean TSA-Seq signals in cell type 1 are significantly bigger than that in cell type 2.
