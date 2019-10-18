@@ -96,7 +96,7 @@ python TX_change_otherway_v2_TSA2.0.py -b otherwayHFF-H1_maxmin_mergeAdjacent.be
 ```
 
 
-Plot kernel density of the two group of genes within the two sets of changed domains:
+Plot kernel density of the two groups of genes:
 
 ```shell
 python TX_change_v2_geneHist_TSA2.0.py -b HFF-H1_maxmin_mergeAdjacent.bed -b2 otherwayHFF-H1_maxmin_mergeAdjacent.bed -g1 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_HFF_GSE100576.txt -g2 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_H1.txt -o HFF-H1_gene -y HFF/H1
