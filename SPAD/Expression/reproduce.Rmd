@@ -1,0 +1,450 @@
+---
+title: "R Notebook"
+author: "Yang Zhang"
+output:
+  html_document: default
+  html_notebook: default
+email: zocean636@gmail.com
+---
+
+## Load libaries and set colors for deciles and vigintiles
+```{r}
+library(ggplot2)
+library(reshape2)
+library(cowplow)
+library(scales)
+library(tidyr)
+library(tibble)
+library(plyr)
+library(colorspace)
+
+# parameters
+col_decile = rev(c('239,62,35', '246,138,31', '245,186,24', '244,235,24', '156,203,60', '76,183,72', '20,171,188', '0,120,178', '58,54,148', '113,44,145'))
+col_decile = sapply(strsplit(col_decile, ","), function(x)
+    rgb(x[1], x[2], x[3], maxColorValue=255))
+# for vigintiles, interpolate the color according the deciles color
+col_vigintile = c()
+for (idx in seq(9)) {
+  col_vigintile = c(col_vigintile, c(col_decile[idx], hex(mixcolor(alpha = 0.5, color1 = hex2RGB(col_decile[idx]), color2 = hex2RGB(col_decile[idx+1])))))
+}
+col_vigintile = c(col_vigintile, hex(mixcolor(alpha = 0.5, color1 = hex2RGB(col_vigintile[18]), color2 = hex2RGB("#FF0000"))), "#FF0000")
+# minial size of genomic bins
+MIN_SIZE = 1000
+# whether to analyze the histone data, default no
+ANALYZE_HISTONE = FALSE
+
+## Main functions to analyze the histone/expression patterns
+# histone marks
+decile_analysis_histone <- function(cell_name, decile_col){
+  # load the table
+  table <- read.table(file=paste0("result/hg38_20kb_", cell_name, ".txt"), header = T, sep = '\t', comment.char = "", check.names = F)
+  # drop wins with zero size
+  table <- subset(table, size > MIN_SIZE)
+  # drop some columns
+  table$start <- NULL
+  table$stop <- NULL
+  # calculate the deciles
+  SON_deciles = quantile(table[, decile_col], probs = seq(0, 1, 0.1), na.rm = T)
+  table$deciles <- cut(table[, decile_col], breaks = SON_deciles, labels = paste0("Decile ", seq(1,10,1)))
+  # calculate the half-deciles
+  SON_vigintile = quantile(table[, decile_col], probs = seq(0, 1, 0.05), na.rm = T)
+  #table$vigintile <- cut(table[, decile_col], breaks = SON_vigintile, labels = paste0("Vigintile ", seq(1,20,1)))
+  # melt the data frame
+  table <- melt(table, id.vars = c("#chrom", "mid", "size", "deciles"), variable.name = "name", value.name = "value")
+  # check how many data are there
+  length(unique(table$name))
+  # split columns
+  table <- table %>% separate(name, c("cell", "target", "lab", "type", "id"), sep = '_', extra = "drop", fill = "right")
+  # drop NA 
+  table <- subset(table, deciles %in% paste0("Decile ", seq(1,10,1)))
+  
+  # for peaks: add the value as peak length in TSA-seq paper
+  if ("peaks" %in% table$type & ANALYZE_HISTONE) {
+    table_peak_length <- subset(table, type == "peaks")
+    table_peak_length <- ddply(table_peak_length, .(deciles, cell, target, lab, type, id), summarize, peak_length = sum(value))
+    table_peak_length <- ddply(table_peak_length, .(cell, target, lab, type, id), transform, total_peak_length = sum(peak_length))
+    table_peak_length$percent <- table_peak_length$peak_length/table_peak_length$total_peak_length
+    table_peak_length$name = paste(table_peak_length$target, table_peak_length$id, sep = '_')
+    # plot
+    plot_peak_length <- ggplot(table_peak_length, aes(x = deciles, y = percent, fill = deciles)) +
+      geom_col() +
+      geom_hline(yintercept = 0.0, size = 1) +
+      xlab("") +
+      ylab("Percent") +
+      scale_y_continuous(labels = percent, expand = c(0,0)) +
+      scale_fill_manual(name = "Deciles", values = col_decile) + 
+      facet_wrap(~ name, ncol = 6) +
+      theme_bw() +
+      theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+      theme(panel.border = element_blank()) +
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+      theme(axis.title.y = element_text(size=rel(1.3),margin=margin(0,10,0,0))) +
+      theme(axis.title.x = element_text(size=rel(1.3),margin=margin(10,0,0,0))) +
+      #theme(axis.text.x = element_text(size=rel(1.5), color = "black", angle = 45, hjust = 1, vjust = 1)) + 
+      theme(axis.text.x = element_blank()) +
+      theme(axis.text.y = element_text(size=rel(1.5), color = "black")) +
+      theme(axis.line = element_line(color="black")) +
+      theme(axis.ticks.x = element_blank()) +
+      theme(strip.text = element_text(size=rel(1.0), face="bold")) +
+      theme(strip.background = element_blank())
+    pdf(file = paste0("figure_", cell_name, "_peak_length.pdf"), width = 15, height = 8)
+    print(plot_peak_length)
+    dev.off()
+  }
+  
+  # for p-value signal use the average
+  if ("pval" %in% table$type & ANALYZE_HISTONE) {
+    table_pval_mean <- subset(table, type == "pval")
+    table_pval_mean$name = paste(table_pval_mean$target, table_pval_mean$id, sep = '_')
+    signal_list = unique(table_pval_mean$name)
+    # plot
+    pdf(file = paste0("figure_", cell_name, "_pval_boxplot.pdf"), width = 6, height = 4)
+    for (data_name in signal_list){
+      data <- subset(table_pval_mean, name == data_name)
+      data_y_max = quantile(data$value, probs = 0.99, na.rm = T)
+      plot_pval <- ggplot(data, aes(x = deciles, y = value, fill = deciles)) +
+        #geom_violin(trim = T) +
+        geom_boxplot(outlier.size = 0.7, outlier.shape = NA, width = 0.7) +
+        coord_cartesian(ylim = c(0, data_y_max)) +
+        xlab("") +
+        ylab("-log10 (P value)") +
+        ggtitle(data_name) +
+        scale_y_continuous(expand = c(0,0)) +
+        scale_fill_manual(name = "Deciles", values = col_decile) + 
+        #facet_wrap(~ name, ncol = 6) +
+        theme_bw() +
+        theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+        theme(panel.border = element_blank()) +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        theme(axis.title.y = element_text(size=rel(1.3),margin=margin(0,10,0,0))) +
+        theme(axis.title.x = element_text(size=rel(1.3),margin=margin(10,0,0,0))) +
+        #theme(axis.text.x = element_text(size=rel(1.5), color = "black", angle = 45, hjust = 1, vjust = 1)) + 
+        theme(axis.text.x = element_blank()) +
+        theme(axis.text.y = element_text(size=rel(1.5), color = "black")) +
+        theme(axis.line = element_line(color="black")) +
+        theme(axis.ticks.x = element_blank()) +
+        theme(strip.text = element_text(size=rel(1.0), face="bold")) +
+        theme(strip.background = element_blank())
+      print(plot_pval)
+    }
+    dev.off()
+  }
+  
+  return(list(data = table, decile_cutoff = SON_deciles, vigintile_cutoff = SON_vigintile))
+}
+# gene expression patterns
+gene_expr <- function(cell_name, expr_name, data_anno) {
+  expr_table <- read.table(file=paste0("result/", expr_name, "_anno_rsem.genes.results"), header = T, sep = '\t', comment.char = "", check.names = F)
+  gene_anno <- read.table(file=paste0("result/", paste0("hg38_gencode_v24_gene_", cell_name, ".txt")), header = T, sep = '\t', comment.char = "", check.names = F)
+  # inner join
+  expr_table <- merge(expr_table, gene_anno, by = "gene_id", all = F)
+  # only use protein_coding
+  expr_table <- subset(expr_table, gene_type == 'protein_coding')
+  # get the TSA-seq deciles
+  TSA_list = colnames(expr_table)[grep('TSA', colnames(expr_table))]
+  for (TSA in TSA_list) {
+    # calculate the deciles
+    #TSA_deciles = quantile(expr_table[, TSA], probs = seq(0, 1, 0.1), na.rm = T)
+    if (grepl('SON', TSA)) {
+      # note use the TSA decile
+      TSA_deciles = data_anno$decile_cutoff
+      TSA_deciles[1] = -10
+      TSA_deciles[length(TSA_deciles)] = 10
+      expr_table[, paste0(TSA, ".deciles")] <- cut(expr_table[, TSA], 
+                                                 breaks = TSA_deciles, 
+                                                 labels = paste0("Decile ", seq(1,10,1)),
+                                                 include.lowest = T,
+                                                 right = T)
+      TSA_vigintiles = data_anno$vigintile_cutoff
+      TSA_vigintiles[1] = -10
+      TSA_vigintiles[length(TSA_vigintiles)] = 10
+      expr_table[, paste0(TSA, ".vigintiles")] <- cut(expr_table[, TSA], 
+                                                 breaks = TSA_vigintiles, 
+                                                 labels = paste0("Vigintile ", seq(1,20,1)),
+                                                 include.lowest = T,
+                                                 right = T)
+    }
+  }
+  # get the gene expression percentile
+  min_FPKM = 1e-3
+  # plot the gene boxplot
+  pdf(file = paste0("figure_", expr_name, "_gene_expr_boxplot.pdf"), width = 6, height = 4)
+  for (TSA in TSA_list) {
+    if (any(grepl('SON_TSA_2.0',TSA))) {
+      #TSA_decile_col = paste0(TSA, '.deciles')
+      TSA_decile_col = paste0(TSA, '.vigintiles')
+      plot_gene_expr_boxplot <- ggplot(subset(expr_table, !is.na(TSA_decile_col)), aes_string(x = TSA_decile_col, y = "FPKM", fill = TSA_decile_col)) +
+        geom_boxplot(outlier.shape = NA) +
+        xlab(TSA_decile_col) +
+        ylab("FPKM") +
+        ggtitle(cell_name) +
+        coord_cartesian(ylim = c(0, 100)) +
+        scale_x_discrete(limits = paste0("Vigintile ", seq(1,20,1))) + 
+        #scale_fill_manual(name = "Deciles", values = col_decile, limits = paste0("Decile ", seq(1,10,1))) + 
+        scale_fill_manual(name = "Vigintiles", values = col_vigintile, limits = paste0("Vigintile ", seq(1,20,1))) + 
+        theme_bw() +
+        theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+        theme(panel.border = element_blank()) +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        theme(axis.title.y = element_text(size=rel(1.5),margin=margin(0,10,0,0))) +
+        theme(axis.title.x = element_text(size=rel(1.5),margin=margin(10,0,0,0))) +
+        #theme(axis.text.x = element_text(size=rel(1.5), color = "black", angle = 45, hjust = 1, vjust = 1)) + 
+        theme(axis.text.x = element_blank()) +
+        theme(axis.text.y = element_text(size=rel(1.5), color = "black")) +
+        theme(axis.line = element_line(color="black")) +
+        theme(axis.ticks.x = element_blank()) +
+        theme(legend.title = element_blank()) +
+        theme(legend.text = element_text(size=rel(1.5)))
+    # plot
+    print(plot_gene_expr_boxplot)
+    }
+  }
+  dev.off()
+  
+  # plot 2D scatter plot
+  if (any(grepl('SON', TSA_list)) & any(grepl('LaminB', TSA_list)) & FALSE) {
+    #expr_table <- subset(expr_table, FPKM_percentile != 'Non-expressed')
+    expr_table$x_son = expr_table[, TSA_list[grep('SON', TSA_list)]]
+    expr_table$y_laminb = expr_table[, TSA_list[grep('LaminB', TSA_list)]]
+    # use interpolation to map the TSA-seq value to the window based percentile
+    # first get the length matched SON value 
+    SON_match <- quantile(subset(data_anno$data, target == "SON")$value, probs = seq(0,1,length.out = nrow(expr_table)), na.rm = T)
+    expr_table$x_son_mapped <- approx(SON_match, expr_table$x_son, xout = SON_match, ties = "ordered", rule=2:2)$y
+    expr_table$x_son_rank = rank(expr_table$x_son_mapped)/nrow(expr_table)
+    #LaminB_match <- quantile(subset(data_anno$data, target = "LaminB")$value, probs = seq(0, 1, length.out = nrow(expr_table)), na.rm = T)
+    #expr_table$y_laminb_mapped <- approx(LaminB_match, expr_table$y_laminb, xout = LaminB_match, ties = "ordered", rule=2:2)$y
+    #expr_table$y_laminb_rank = rank(expr_table$y_laminb_mapped)/nrow(expr_table)
+    #
+    cal_per <- function(win_list, gene_value) {
+      if (gene_value < min(win_list, na.rm = T)) {
+        return(0.0)
+      } else if (gene_value > max(win_list, na.rm = T)) {
+        return(1.0)
+      } else {
+        return(sum(gene_value >= win_list)/length(win_list))
+      }
+    }
+    testFunc <- function(a) a *2
+    expr_table$x_son_rank = lapply(expr_table$x_son, function(x) cal_per(subset(data_anno$data, target == "SON")$value, x))
+    #expr_table$x_son_rank = lapply(expr_table[, "x_son"], function(x) testFunc(x[1]))
+    SON_min = min(expr_table$x_son, na.rm = T)
+    SON_max = max(expr_table$x_son, na.rm = T)
+    LaminB_min = min(expr_table$y_laminb, na.rm = T)
+    LaminB_max = max(expr_table$y_laminb, na.rm = T)
+    pdf(paste0("figure_", expr_name, "_gene_expr_2D_scatter.pdf"), width = 8, height = 8)
+    group_list = c("Non-expressed", fpkm_cutoff_label)
+    col_list = c("black", col_decile)
+    for (nn in seq(1, length(group_list))) {
+      group = group_list[nn]
+      color_point = col_list[nn]
+      plot_top_density <- ggplot(subset(expr_table, FPKM_percentile == group), aes(x = x_son)) +
+        geom_density(fill = color_point, alpha = 0.7) +
+        coord_cartesian(xlim = c(SON_min, SON_max)) +
+        scale_x_continuous(expand = c(0,0)) +
+        scale_y_continuous(expand = c(0,0), position = "right") +
+        xlab("") +
+        ylab("") +
+        ggtitle(paste(cell_name, group, sep=' ')) +
+        theme_bw() +
+        theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+        theme(panel.border = element_blank()) +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        theme(axis.title = element_blank()) +
+        theme(axis.text.x = element_blank()) +
+        theme(axis.text.y = element_text(size=rel(1), color = "black")) +
+        theme(axis.line = element_line(color="black")) +
+        theme(axis.ticks.x = element_blank()) +
+        theme(legend.position = "none")
+      plot_right_density <- ggplot(subset(expr_table, FPKM_percentile == group), aes(x = y_laminb)) +
+        geom_density(fill = color_point, alpha = 0.7) +
+        coord_cartesian(xlim = c(LaminB_min, LaminB_max)) +
+        #scale_x_reverse(expand = c(0,0)) +
+        coord_flip() +
+        scale_x_continuous(expand = c(0,0)) +
+        scale_y_continuous(expand = c(0,0), position = "right") +
+        xlab("") +
+        ylab("") +
+        theme_bw() +
+        theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+        theme(panel.border = element_blank()) +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        theme(axis.title = element_blank()) +
+        theme(axis.text.y = element_blank()) +
+        theme(axis.text.x = element_text(size=rel(1), color = "black")) +
+        theme(axis.line = element_line(color="black")) +
+        theme(axis.ticks.y = element_blank()) +
+        theme(legend.position = "none")
+      plot_scatter <- ggplot(expr_table, aes(x = x_son, y = y_laminb)) +
+        geom_point(alpha = 0.3, color = "lightgrey", size = 0.5) +
+        geom_point(data = subset(expr_table, FPKM_percentile == group), aes(x = x_son, y = y_laminb), alpha = 0.7, size = 0.75, color = color_point) +
+        coord_cartesian(xlim = c(SON_min, SON_max), ylim = c(LaminB_min, LaminB_max)) +
+        xlab("SON TSA-seq score") +
+        ylab("LaminB TSA-seq score") +
+        scale_y_continuous(expand = c(0,0)) +
+        scale_x_continuous(expand = c(0,0)) +
+        #scale_fill_manual(name = "Deciles", values = col_decile, limits = paste0("Decile ", seq(1,10,1))) + 
+        theme_bw() +
+        theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+        theme(panel.border = element_blank()) +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        theme(axis.title.y = element_text(size=rel(1.5),margin=margin(0,10,0,0))) +
+        theme(axis.title.x = element_text(size=rel(1.5),margin=margin(10,0,0,0))) +
+        theme(axis.text = element_text(size=rel(1.5), color = "black")) +
+        theme(axis.line = element_line(color="black")) +
+        theme(axis.ticks.x = element_blank()) +
+        theme(legend.position = "none")
+      p1 <- plot_top_density + plot_spacer() + plot_scatter + plot_right_density + plot_layout(nrow = 2, ncol = 2, widths = c(6, 1), heights = c(1,6))
+      print(p1)
+    }
+    dev.off()
+  }
+  
+  # plot the distribution of gene
+  fpkm_cutoff = c(seq(0, 0.9, 0.1), seq(0.91, 1, 0.01))
+  fpkm_cutoff_label = c(paste0("Expr ", seq(0,80,10), '-', seq(10, 90, 10), "%"),  paste0("Expr ", seq(90, 99, 1), '-', seq(91, 100, 1), "%"))
+  expr_percentile = quantile(subset(expr_table, FPKM > min_FPKM)[,"FPKM"], probs = fpkm_cutoff, na.rm = T)
+  expr_table$FPKM_percentile = "Non-expressed"
+  idx_list = which(expr_table$FPKM > min_FPKM)
+  value_list = as.character(cut(expr_table[which(expr_table$FPKM > min_FPKM), "FPKM"],
+                                    breaks = expr_percentile,
+                                    labels = fpkm_cutoff_label,
+                                    include.lowest = T))
+  expr_table[idx_list, "FPKM_percentile"] = value_list
+  expr_table$FPKM_percentile <- factor(expr_table$FPKM_percentile, levels = c("Non-expressed", fpkm_cutoff_label))
+  pdf(paste0("figure_", expr_name, "_gene_expr_dist.pdf"), width = 8, height = 8)
+  for (TSA in TSA_list) {
+    if (any(grepl('SON_TSA_2.0',TSA))) {
+      #TSA_decile_col = paste0(TSA, '.deciles')
+      TSA_decile_col = paste0(TSA, '.vigintiles')
+      ddply_col_list = c("FPKM_percentile", TSA_decile_col)
+      gene_expr_dist <- ddply(expr_table, ddply_col_list, summarize, count= length(gene_id))
+      gene_expr_dist <- ddply(gene_expr_dist, .(FPKM_percentile), transform, total = sum(count))
+      gene_expr_dist$per <- gene_expr_dist$count/gene_expr_dist$total
+      gene_expr_dist$FPKM_percentile <- factor(gene_expr_dist$FPKM_percentile, levels = c("Non-expressed", fpkm_cutoff_label))
+      plot_expr_dist <- ggplot(gene_expr_dist, aes_string(x = TSA_decile_col, y = "per", fill = TSA_decile_col)) +
+        geom_col()+
+        xlab(TSA_decile_col) +
+        ylab("Percent") +
+        scale_x_discrete(limits = paste0("Vigintile ", seq(1,20,1))) + 
+        scale_y_continuous(labels = percent, expand = c(0,0), breaks = seq(0,0.6,0.1)) +
+        #scale_fill_manual(name = "Deciles", values = col_decile, limits = paste0("Decile ", seq(1,10,1))) + 
+        scale_fill_manual(name = "Vigintiles", values = col_vigintile, limits = paste0("Vigintile ", seq(1,20,1))) +
+        facet_wrap(~ FPKM_percentile, ncol = 5) +
+        theme_bw() +
+        theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+        theme(panel.border = element_blank()) +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        theme(axis.title.y = element_text(size=rel(1.5),margin=margin(0,10,0,0))) +
+        theme(axis.title.x = element_text(size=rel(1.5),margin=margin(10,0,0,0))) +
+        theme(axis.text.x = element_blank()) +
+        theme(axis.text.y = element_text(size=rel(1.5), color = "black")) +
+        theme(axis.line = element_line(color="black")) +
+        theme(axis.ticks.x = element_blank()) +
+        theme(legend.position = "none") +
+        theme(strip.text = element_text(size=rel(1.0), face="bold")) +
+        theme(strip.background = element_blank())
+      print(plot_expr_dist)
+    }
+  }
+  dev.off()
+  
+  return(expr_table)
+}
+# housekeeping genes
+load_housekeeping <- function (filename) {
+  table <- read.table(file=filename, 
+                      header = TRUE, 
+                      sep='\t', 
+                      comment.char = "", 
+                      stringsAsFactors = FALSE)
+  # select rows with no NA values in samples
+  filter_row <- complete.cases(table[, c("H1_SON_TSA_2.0", "K562_SON_TSA_2.0", "HCT116_SON_TSA_2.0", "HFF_SON_TSA_2.0")])
+  filter_table <- table[filter_row, ]
+  # drop wins with zero size
+  filter_table <- subset(filter_table, size > MIN_SIZE)
+  # check how many rows are kept
+  #nrow(filter_table)
+  #nrow(table)
+  # convert NA to -1
+  filter_table[which(is.na(filter_table$hk)), 'hk'] = -1
+  filter_table[which(is.na(filter_table$non_hk)), 'non_hk'] = -1
+  return(filter_table)
+}
+# plot housekeeping results
+housekeeping_vigintile <- function(table, TSA, data_anno, title){
+  TSA_vigintiles = data_anno$vigintile_cutoff
+  TSA_vigintiles[1] = -10
+  TSA_vigintiles[length(TSA_vigintiles)] = 10
+  table$TSA_vigintiles <- cut(table[, TSA], 
+                           breaks = TSA_vigintiles, 
+                           labels = paste0("", seq(1,20,1)),
+                           include.lowest = T,
+                           right = T)
+  table$TSA_vigintiles <- factor(table$TSA_vigintiles, levels = paste0("", seq(1,20,1)))
+  result <- ddply(table, .(TSA_vigintiles), summarize, 
+             count_bin_hk = sum(hk > -1), 
+             count_bin_non_hk = sum(non_hk > -1), 
+             count_gene_hk = length(unique(hk)) - 1, 
+             count_gene_non_hk = length(unique(non_hk)) - 1, .drop = FALSE)
+  result$per_bin_hk = result$count_bin_hk/sum(result$count_bin_hk)
+  result$per_bin_non_hk = result$count_bin_non_hk/sum(result$count_bin_non_hk)
+  result$per_gene_hk = result$count_gene_hk/sum(result$count_gene_hk)
+  result$per_gene_non_hk = result$count_gene_non_hk/sum(result$count_gene_non_hk)
+  result = melt(result[, c("TSA_vigintiles", "per_bin_hk", "per_bin_non_hk", "per_gene_hk", "per_gene_non_hk")], 
+           id.vars = c("TSA_vigintiles", "per_gene_hk", "per_gene_non_hk"), 
+           variable.name = "group_bin",
+           value.name = "per_bin")
+  result = melt(result, 
+           id.vars = c("TSA_vigintiles", "group_bin", "per_bin"), 
+           variable.name = "group_gene", 
+           value.name = "per_gene")
+  plot_vigintile <- ggplot(unique(result[ ,c("TSA_vigintiles", "per_gene", "group_gene")]), aes(x = TSA_vigintiles, y = per_gene, fill = group_gene)) + 
+      geom_col(col="black", position = "dodge") + 
+      xlab("TSA-seq vigintiles") +
+      ylab("Percentage") +
+      ggtitle("HFF SON TSA-seq 2.0") +
+      scale_y_continuous(labels = percent, expand = c(0,0)) +
+      scale_fill_manual(name="",values=c("per_gene_hk"="#e41a1c", "per_gene_non_hk"="#377eb8"),
+                        labels = c("housekeeping genes", "non-housekeeping genes")) +
+      theme_bw() +
+      theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+      theme(panel.border = element_blank()) +
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+      theme(axis.title.y = element_text(size=rel(1.5),margin=margin(0,10,0,0))) +
+      theme(axis.title.x = element_text(size=rel(1.5),margin=margin(10,0,0,0))) +
+      theme(axis.text = element_text(size=rel(1.2), color="black")) +
+      theme(axis.line = element_line(color="black")) +
+      theme(legend.position = c(0.4, 0.8), legend.text = element_text(size = rel(1.2))) +
+      coord_cartesian(ylim = c(0, 0.17))
+  return(plot_vigintile)
+}
+
+## load results and make figures 
+# load the results
+data_H1 <- decile_analysis_histone("H1", "H1_SON_TSA_2.0")
+data_K562 <- decile_analysis_histone("K562", "K562_SON_TSA_2.0")
+data_HCT116 <- decile_analysis_histone("HCT116", "HCT116_SON_TSA_2.0")
+data_HFF <- decile_analysis_histone("HFF", "HFF_SON_TSA_2.0")
+expr_K562 <- gene_expr("K562", "K562", data_K562)
+expr_HCT116 <- gene_expr("HCT116", "HCT116", data_HCT116)
+expr_H1 <- gene_expr("H1", "H1", data_H1)
+expr_HFF_GSE100576 <- gene_expr("HFF", "HFF_GSE100576", data_HFF)
+expr_HFF_GSE64553 <- gene_expr("HFF", "HFF_GSE64553", data_HFF)
+
+# report
+write.table(expr_K562, file = "report/gencode_expr_K562.txt", sep = '\t', col.names = T, row.names = F, quote = F)
+write.table(expr_HCT116, file = "report/gencode_expr_HCT116.txt", sep = '\t', col.names = T, row.names = F, quote = F)
+write.table(expr_H1, file = "report/gencode_expr_H1.txt", sep = '\t', col.names = T, row.names = F, quote = F)
+write.table(expr_HFF_GSE100576, file = "report/gencode_expr_HFF_GSE100576.txt", sep = '\t', col.names = T, row.names = F, quote = F)
+write.table(expr_HFF_GSE64553, file = "report/gencode_expr_HFF_GSE64553.txt", sep = '\t', col.names = T, row.names = F, quote = F)
+
+# housekeeping genes
+table_housekeeping <- load_housekeeping("result/hg38_20kb_housekeeping.txt")
+plot_vigintile_H1 <- housekeeping_vigintile(table_housekeeping, "H1_SON_TSA_2.0", data_H1, "H1 SON TSA-seq 2.0")
+plot_vigintile_K562 <- housekeeping_vigintile(table_housekeeping, "K562_SON_TSA_2.0", data_K562, "K562 SON TSA-seq 2.0")
+plot_vigintile_HCT116 <- housekeeping_vigintile(table_housekeeping, "HCT116_SON_TSA_2.0", data_HCT116, "HCT116 SON TSA-seq 2.0")
+plot_vigintile_HFF <- housekeeping_vigintile(table_housekeeping, "HFF_SON_TSA_2.0", data_HFF, "HFF SON TSA-seq 2.0")
+pdf(file = "figure_housekeeping_gene_vigintile.pdf", width = 14, height = 10)
+plot_grid(plot_vigintile_K562, plot_vigintile_H1, plot_vigintile_HCT116, plot_vigintile_HFF, align = "h")
+dev.off()
+```
