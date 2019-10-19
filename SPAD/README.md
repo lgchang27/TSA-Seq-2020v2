@@ -1,5 +1,5 @@
 # SPAD
-This set of codes is used to call Speckle Associated Domains (SPADs), compare SPADs in different cell lines, and correlate SPADs with gene expression
+This set of codes is used to call Speckle Associated Domains (SPADs), compare SPADs in different cell lines, and correlate SPADs with gene expression.
 
 ## Percentile normalization
 SPADs are defined as genomic regions with top 5 percentile SON TSA-Seq scores. So we first convert TSA-Seq scores into percentiles.
