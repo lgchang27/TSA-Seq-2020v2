@@ -1,5 +1,5 @@
 # Distance and residuals
-This set of codes is used for distance prediction by TSA-Seq data (smoothed) and calculation of distance residuals between different TSA-Seq conditions.
+This set of codes is used for distance prediction from smoothed TSA-Seq enrichment scores and calculation of distance residuals between different TSA-Seq conditions.
 
 ## Distance calculation
 Cytological distances (um) (x) to the targetted nuclear body are predicted from TSA-Seq signals (y) by a fomula y = y0 + A * e^(R0 * x). (See paper Method)
