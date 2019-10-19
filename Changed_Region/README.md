@@ -116,6 +116,10 @@ DE analysis was done by R with DESeq2 package (see paper Methods). Thresholds to
 
 Results: 
 
-Significantly higher expression in HFF: DE/20190421_HFFvsH1_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv
+Significantly higher expression in HFF: 
+DE/20190421_HFFvsH1_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv
 
-Significantly higher expression in H1: DE/20190421_H1vsHFF_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv
+Significantly higher expression in H1: 
+DE/20190421_H1vsHFF_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv
+
+### 
