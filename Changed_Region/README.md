@@ -38,16 +38,16 @@ This code will also output the mean (MEAN) and standard deviation (STD) for the 
 ## Identify changed domains
 Compare two cell lines with two biological replicates each, identify all 20 kb bins above the threshold generated from last step (always cell type 2 - cell type 1).
 
-Take a second threshold of domain size (100kb) and return merged segments when the region above the size threshold.
+Merge adjacent bins to segment regions. Take a second threshold of domain size (100kb) and return the segments as changed domains when the region above the size threshold.
 
 ```shell
 python residual_4datasets_compare_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell2-cell1_maxmin -c aa -g utilities/hg38M.genome -w 20000 -s 100000 -cell1 cell1_maxmin_ReplicateMean -cell2 cell2_maxmin_ReplicateMean
 ```
 
-For regions with signals in cell type 2 significantly bigger than cell type 1: this code will output a wig file (cell2-cell1_maxmin.wig) and a bed file (cell2-cell1_maxmin.bed) with all residues (20kb bin), and a bed file showing the merged regions (cell2-cell1_maxmin_mergeAdjacent.bed). And it will also output corresponding bigwig and bigbed files.
+For regions with signals in cell type 2 significantly bigger than cell type 1: this code will output a wig file (cell2-cell1_maxmin.wig) and a bed file (cell2-cell1_maxmin.bed) for all 20 kb bins with residuals between the two cell lines, and a bed file for segmented domains (cell2-cell1_maxmin_mergeAdjacent.bed) with mean 20kb-bin residuals for each domain. And it will also output corresponding bigwig and bigbed files.
 
 
-For regions with signals in cell type 1 significantly bigger than cell type 2: this code will output a wig file (otherwaycell2-cell1_maxmin.wig) and a bed file (otherwaycell2-cell1_maxmin.bed) with all residues (20kb bin), and a bed file showing the merged regions (otherwaycell2-cell1_maxmin_mergeAdjacent.bed). And it will also output corresponding bigwig and bigbed files.
+For regions with signals in cell type 1 significantly bigger than cell type 2: this code will output a wig file (otherwaycell2-cell1_maxmin.wig) and a bed file (otherwaycell2-cell1_maxmin.bed) for all 20kb bins with residuals between the two cell lines, and a bed file for segmented domains (otherwaycell2-cell1_maxmin_mergeAdjacent.bed) with mean 20kb-bin residuals for each domain. And it will also output corresponding bigwig and bigbed files.
 
 This code will also output a replicate-mean signal bw file for each cell line.
 
@@ -69,28 +69,28 @@ Figures 2e (bottom), 2f (P-value track), Supplementary Figures 10a,c (bottom), 1
 
 ## Correlate changed regions with gene expression in the two cell lines
 
-Take the bed files of the merged regions with significantly changed TSA-Seq signals (mergeAdjacent.bed) generated from the "Identify changed domains" step. Also take the gene expression results (gencode_expr_cellX.txt) from "TSA-Seq-2.0-Analysis/SPAD/Expression/Report" for the two cell lines to be compared.
+Take the bed files (cell2-cell1_maxmin_mergeAdjacent.bed and otherwaycell2-cell1_maxmin_mergeAdjacent.bed) for the changed domains between the two cell lines generated from the "Identify changed domains" step. Also take the gene expression results (gencode_expr_cellX.txt) from "TSA-Seq-2.0-Analysis/SPAD/Expression/Report" for the two cell lines to be compared.
 
 Take H1 vs HFF comparison as example:
 
 
-For genes within domains with significantly higher SON TSA-Seq signal in HFF than in H1:
+For genes within domains with significantly higher SON TSA-Seq signals in HFF than in H1:
 
 ```shell
 python TX_change_v2_TSA2.0.py -b HFF-H1_maxmin_mergeAdjacent.bed -g1 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_HFF_GSE100576.txt -g2 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_H1.txt -o HFF-H1 -geneID HFF-H1_geneID -y HFF/H1
 
-# This code will generate a histogram showing log2-fold change of HFF/H1 for all protein coding genes within the domains with significantly higher TSA-Seq signal in HFF than in H1.
+# This code will generate a histogram showing log2-fold change of HFF/H1 against domain mean rescaled TSA-Seq scores for all protein coding genes within the domains with significantly higher TSA-Seq signal in HFF than in H1.
 # This code will also report a number for all the genes within the domains and a number for genes with biased expression (log2-fold change of HFF/H1 > 0) comparing the two cell lines.
 # This code will also generate a gene list for the genes with the biased expression (log2-fold change of HFF/H1 > 0).
 ```
 
 
-For genes within domains with significantly higher SON TSA-Seq signal in H1 than in HFF:
+For genes within domains with significantly higher SON TSA-Seq signals in H1 than in HFF:
 
 ```shell
 python TX_change_otherway_v2_TSA2.0.py -b otherwayHFF-H1_maxmin_mergeAdjacent.bed -g1 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_HFF_GSE100576.txt -g2 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_H1.txt -o otherwayHFF-H1 -geneID otherwayHFF-H1_geneID -y HFF/H1
 
-# This code will generate a histogram showing log2-fold changes of HFF/H1 for all protein coding genes within the domains with significantly higher TSA-Seq signal in H1 than in HFF.
+# This code will generate a histogram showing log2-fold changes of HFF/H1 against domain mean rescaled TSA-Seq scores for all protein coding genes within the domains with significantly higher TSA-Seq signal in H1 than in HFF.
 # This code will also report a number for all the genes within the domains and a number for genes with biased expression (log2-fold change of HFF/H1 < 0) comparing the two cell lines.
 # This code will also generate a gene list for the genes with the biased expression (log2-fold change of HFF/H1 < 0)
 ```
