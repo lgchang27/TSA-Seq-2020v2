@@ -79,8 +79,10 @@ For genes within domains with significantly higher SON TSA-Seq signals in HFF th
 ```shell
 python TX_change_v2_TSA2.0.py -b HFF-H1_maxmin_mergeAdjacent.bed -g1 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_HFF_GSE100576.txt -g2 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_H1.txt -o HFF-H1 -geneID HFF-H1_geneID -y HFF/H1
 
-# This code will generate a histogram showing log2-fold change of HFF/H1 against domain mean rescaled TSA-Seq scores for all protein coding genes within the domains with significantly higher TSA-Seq signal in HFF than in H1.
+# This code will generate a scatter plot showing log2-fold change of HFF/H1 against domain mean rescaled TSA-Seq scores for all protein coding genes within the domains with significantly higher TSA-Seq signal in HFF than in H1.
+
 # This code will also report a number for all the genes within the domains and a number for genes with biased expression (log2-fold change of HFF/H1 > 0) comparing the two cell lines.
+
 # This code will also generate a gene list for the genes with the biased expression (log2-fold change of HFF/H1 > 0).
 ```
 
@@ -90,8 +92,10 @@ For genes within domains with significantly higher SON TSA-Seq signals in H1 tha
 ```shell
 python TX_change_otherway_v2_TSA2.0.py -b otherwayHFF-H1_maxmin_mergeAdjacent.bed -g1 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_HFF_GSE100576.txt -g2 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_H1.txt -o otherwayHFF-H1 -geneID otherwayHFF-H1_geneID -y HFF/H1
 
-# This code will generate a histogram showing log2-fold changes of HFF/H1 against domain mean rescaled TSA-Seq scores for all protein coding genes within the domains with significantly higher TSA-Seq signal in H1 than in HFF.
+# This code will generate a scatter plot showing log2-fold changes of HFF/H1 against domain mean rescaled TSA-Seq scores for all protein coding genes within the domains with significantly higher TSA-Seq signal in H1 than in HFF.
+
 # This code will also report a number for all the genes within the domains and a number for genes with biased expression (log2-fold change of HFF/H1 < 0) comparing the two cell lines.
+
 # This code will also generate a gene list for the genes with the biased expression (log2-fold change of HFF/H1 < 0)
 ```
 
