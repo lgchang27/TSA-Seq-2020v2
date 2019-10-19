@@ -122,4 +122,12 @@ DE/20190421_HFFvsH1_2folds_padj0.01-DESeq2-results-with-normalized-counts-protei
 Significantly higher expression in H1: 
 DE/20190421_H1vsHFF_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv
 
-### 
+### Seperate relocated and non-relocated DE genes, and compare their log2-fold changes
+
+Take the bed files (HFF-H1_maxmin_mergeAdjacent.bed and otherwayHFF-H1_maxmin_mergeAdjacent.bed) for the changed domains between the two cell lines generated from the "Identify changed domains" step. Also take the .csv files generated from DE analysis. Find genes that are entirely located within the changed domains as relocated genes. Find genes that are not entirely located within the changed domains as non-relocated genes.
+
+For DE genes with significantly higher expression in HFF
+
+```shell
+python DE_TSA_pos_v2_TSA2.0.py -b HFF-H1_maxmin_mergeAdjacent.bed -csv DE/20190421_HFFvsH1_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv -o DE_HFF-H1 -overlap_geneID relocated -nonOverlap_geneID not_relocated -all_geneID all_gene -y HFF/H1
+```
