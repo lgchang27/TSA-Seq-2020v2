@@ -1,5 +1,5 @@
-# Changed Region
-This set of codes is for cell type pair-wise comparison to identify changed regions in SON TSA-Seq mapping and to correlate these regions with gene expression.
+# Changed region
+This set of codes is used for cell type pair-wise comparison to identify changed regions in SON TSA-Seq mapping and to correlate these regions with gene expression.
 
 ## Rescale TSA-Seq scores
 Rescale TSA-Seq enrichment scores (20kb bin) linearly between their min and max values to a new 1-100 and round up to integers. 
