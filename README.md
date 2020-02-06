@@ -4,7 +4,7 @@
 
 TSA-Seq normalization pipeline and softwares are at https://github.com/zocean/Norma. This pipeline will take raw sequencing fastq files (pulldown and input), align reads to genome, remove PCR duplicates, generate TSA-Seq enrichment scores (20kb bin) as .wig and .bigwig files.
 
-Figures 1E (top), 2A (top), Supplementary Figures 3C were generated from the output bigwig file.
+Figures 1E (top), 2A (top), Supplementary Figures 3C were generated from the output .bigwig files from this set of codes.
 
 ## TSA-Seq data smoothing
 
