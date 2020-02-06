@@ -1,5 +1,5 @@
 # TSA-Seq data smoothing
-This code is used to smooth 20kb-binned TSA-Seq .wig data 
+This code is used to smooth the TSA-Seq enrichment scores (20kb bin) using the TSA-Seq_20kb.wig file from TSA-Seq normalization.
 
 ```shell
 python TSA_smooth_hanningFor20kbNonsliding_TSA2.0.py --wig TSA-Seq_20kb.wig -w 20000 -aggwin 200000 --smooth -n1 TSA-Seq_hanning_20kbx21 -n2 TSA-Seq_hanning_20kbx21_agg_200kb -g utilities/hg38F.genome
