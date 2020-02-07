@@ -207,9 +207,23 @@ python percentileDistance_TSA2.0.py -w1 K562_TSA-Seq_hanning_20kbx21_maxmin.wig 
 
 This code will generate a file (K562_maxminVSdistance.dic) with four columns. Column 1: rescaled SON TSA-Seq scores (1-100). Column 2: number of 20kb bins for each score in column 1. Column 3: mean predicted distance of all the 20kb bins for each score in column 1. Column 4: standard deviation of predicted distance of all the 20kb bins for each score in column 1.
 
+### Estimate distance changes relative to speckles comparing H1 vs K562, based on distance calibration in K562 cells.
 
+Take the bed files (K562-H1_maxmin_mergeAdjacent.bed and otherwayK562-H1_maxmin_mergeAdjacent.bed) for the changed domains between the two cell lines generated from the "Identify changed domains" step. 
 
+Take the .wig files (TSA-Seq_hanning_20kbx21_maxmin.wig) generated from the "Rescale TSA-Seq scores" step for the two cell lines each with 2 biological replicates.
 
+Take the score-distance dictionary file generated from last step (K562_maxminVSdistance.dic). 
+
+```shell
+#For regions closer to speckles in K562 cells:
+python domainRsd_convert_TSA2.0.py -b K562-H1_maxmin_mergeAdjacent.bed -p1 H1_rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -p2 H1_rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -p3 K562_rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -p4 K562_rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -d K562_maxminVSdistance.dic -o K562-H1_maxmin_mergeAdjacent_k562DistanceRsd.bed
+
+#For regions closer to speckles in H1 cells:
+python domainRsd_convert_TSA2.0.py -b otherwayK562-H1_maxmin_mergeAdjacent.bed -p1 H1_rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -p2 H1_rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -p3 K562_rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -p4 K562_rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -d K562_maxminVSdistance.dic -o otherwayK562-H1_maxmin_mergeAdjacent_k562DistanceRsd.bed
+```
+
+This code will take all the changed domains from the "mergeAdjacent.bed" file, get the domain mean rescaled SON TSA-Seq score in both cell lines (replicate mean) for each region, and convert the rescaled SON TSA-Seq scores to distances based on the provided score-distance dictionary. This code will calculate the distance residuals between the converted distences in the two cell lines for each region, always cell line 2 distance (cell2) - cell line 1 distance (cell1). This code will output a .bed file with five columns: chrom, start, end, distance(cell1), distance(cell2), distance residual (cell2-cell1)
 
 
 
