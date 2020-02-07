@@ -1,8 +1,12 @@
 # Changed region
-This set of codes is used for cell type pair-wise comparison to identify changed regions in SON TSA-Seq mapping and to correlate these regions with gene expression.
+This set of codes was used for cell type pair-wise comparison to identify changed regions in SON TSA-Seq mapping and to correlate these regions with gene expression.
+
+This set of codes was also used to compare K562 TSA-Seq data without and with heat shock (37C vs 42C 30min).
+
+Examples below are shown using cell type paire-wise comparison.
 
 ## Rescale TSA-Seq scores
-Rescale TSA-Seq enrichment scores (20kb bin) linearly between their min and max values to a new 1-100 and round up to integers. 
+Rescale TSA-Seq enrichment scores (20kb bin) linearly between their min and max values to a new 1-100 scale and round up to integers. 
 
 The rescaling funciton is:
 
@@ -13,13 +17,15 @@ Scaled enrichment score (bin i) = (TSA-Seq enrichment score (bin i) - min) / (ma
 ```shell
 python plot_TSA_value_TSA2.0.py -w TSA-Seq_hanning_20kbx21.wig -g utilities/hg38_Gap.bed -u 99.95 -l 0.05
 ```
-This code will return a large and a small percentile of all ranked TSA-Seq enrichment scores (20kb bin) that will be used as the max (xx) and min (yy) scores for rescaling (e.g. 99.95% and 0.05% for HFFc6 and H1 comparison).
+This code takes the .wig file for 20kb-binned smoothed TSA-Seq enrichment score (TSA-Seq_hanning_20kbx21.wig) as input. The code will return a large (-u) and a small (-l) percentile of all ranked TSA-Seq enrichment scores that will be used as the max (xx) and min (yy) scores for rescaling (e.g. 99.95% and 0.05% for HFFc6 and H1 comparison, 99.92% and 0.08% for HCT116 and H1 comparison, 99.95% and 0.05% for K562 and H1 comparison).
 
 ```shell
 python TSA_max_min_norm_TSA2.0.py -w TSA-Seq_hanning_20kbx21.wig -q 100 -g utilities/hg38_Gap.bed -o TSA-Seq_hanning_20kbx21_maxmin -gg utilities/hg38M.genome -max xx -min -yy
+
 #Genome size file hg38F.genome was for female cell line (K562), hg38M.genome was for male cell lines (H1, HCT116, HFFc6).
 ```
-This code will rescale TSA-Seq enrichmen scores into a 1 to 100 scale (showing -49 to 50 in generated wig files).
+
+This code takes the .wig file for 20kb-binned smoothed TSA-Seq enrichment score (TSA-Seq_hanning_20kbx21.wig) as input and takes a large and a small percentile of all ranked TSA-Seq enrichment scores generated from last step as max (-max) and min (-min) for the rescaling. This code will rescale TSA-Seq enrichment scores into a 1 to 100 scale (reporting as -49 to 50) and generate .wig and .bw files (TSA-Seq_hanning_20kbx21_maxmin.wig, TSA-Seq_hanning_20kbx21_maxmin.bw).
 
 ## Statistics
 Statistical analysis based on biological replicates for two cell lines and generate thresholds to call changed 20kb-bins based on a P-value of 0.01 (see paper Methods)
@@ -27,33 +33,33 @@ Statistical analysis based on biological replicates for two cell lines and gener
 ```shell
 python residual_4datasets_stat_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell1AndCell2 -P 0.01
 ```
-This code will generate an upper (aa) and a lower (bb) shreshold to call significantly changed 20kb bins. 
+This code takes the .wig files (TSA-Seq_hanning_20kbx21_maxmin.wig) generated from last step to compare two cell lines (cell1 and cell2), each with two biological replicates (rep1 and rep2). This code will generate an upper (aa) and a lower (bb) shreshold to call significantly changed 20kb bins. 
 
-The upper threshold (aa) is a positive number: residuals larger than it mean TSA-Seq signals in cell type 2 are significantly bigger than that in cell type 1.
+The upper threshold (aa) is a positive number: residuals larger than it mean TSA-Seq signals in cell type 2 (cell2) are significantly bigger than that in cell type 1 (cell1).
 
 The lower threshold (bb, bb = (-1) * aa) is a negative number: residuals smaller than it mean TSA-Seq signals in cell type 1 are significantly bigger than that in cell type 2.
 
 This code will also output the mean (MEAN) and standard deviation (STD) for the fitted gaussian distribution (statistics). 
 
 ## Identify changed domains
-Compare two cell lines with two biological replicates each, identify all 20 kb bins above the threshold generated from last step (always cell type 2 - cell type 1).
+Compare two cell lines with two biological replicates each, identify all 20 kb bins above the threshold (-c: aa) generated from last step (always cell type 2 values - cell type 1 values).
 
-Merge adjacent bins to segment regions. Take a second threshold of domain size (100kb) and return the segments as changed domains when the region above the size threshold.
+Merge adjacent bins to segment regions. Take a second threshold (-s: 100000) of domain size (100kb) and return the segments as changed domains when the region size are above the size threshold (100kb).
 
 ```shell
 python residual_4datasets_compare_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell2-cell1_maxmin -c aa -g utilities/hg38M.genome -w 20000 -s 100000 -cell1 cell1_maxmin_ReplicateMean -cell2 cell2_maxmin_ReplicateMean
 ```
 
-For regions with signals in cell type 2 significantly bigger than cell type 1: this code will output a wig file (cell2-cell1_maxmin.wig) and a bed file (cell2-cell1_maxmin.bed) for all 20 kb bins with residuals between the two cell lines, and a bed file for segmented domains (cell2-cell1_maxmin_mergeAdjacent.bed) with mean 20kb-bin residuals for each domain. And it will also output corresponding bigwig and bigbed files.
+For regions with signals in cell type 2 significantly bigger than cell type 1: this code will output a wig file (cell2-cell1_maxmin.wig) and a bed file (cell2-cell1_maxmin.bed) for all 20 kb bins with residuals between the two cell lines, and a bed file for segmented domains (cell2-cell1_maxmin_mergeAdjacent.bed) with mean 20kb-binned residuals for each domain. And it will also output corresponding .bw and .bb files for visualizaiton in genome browser.
 
 
-For regions with signals in cell type 1 significantly bigger than cell type 2: this code will output a wig file (otherwaycell2-cell1_maxmin.wig) and a bed file (otherwaycell2-cell1_maxmin.bed) for all 20kb bins with residuals between the two cell lines, and a bed file for segmented domains (otherwaycell2-cell1_maxmin_mergeAdjacent.bed) with mean 20kb-bin residuals for each domain. And it will also output corresponding bigwig and bigbed files.
+For regions with signals in cell type 1 significantly bigger than cell type 2: this code will output a wig file (otherwaycell2-cell1_maxmin.wig) and a bed file (otherwaycell2-cell1_maxmin.bed) for all 20kb bins with residuals between the two cell lines, and a bed file for segmented domains (otherwaycell2-cell1_maxmin_mergeAdjacent.bed) with mean 20kb-binned residuals for each domain. And it will also output corresponding .bw and .bb files for visualizaiton in genome browser.
 
-This code will also output a replicate-mean signal bw file for each cell line.
+This code will also output a replicate-mean signal .bw file for each cell line.
 
-This code will also output a bin residue distribution and fit of gaussian distribution.
+This code will also output a 20kb-binned residual distribution and fit of gaussian distribution.
 
-Figures 2e (middle), 2f (region bars), Supplementary Figures 10a,c (middle), 10b,d (region bars), 11a (middle), 11b (region bars) were generated from the mergeAdjacent.bed (.bb) files.
+Figures 3A,B (middle bars), Supplementary Figures 6A,B,D,E (middle bars), 8A-D (middle bars) were generated from the _mergeAdjacent.bb files.
 
 ## Calculate genome-wide P-values
 Compare two cell lines with two replicates each, take mean (MEAN) and standard diviation (STD) generated from the "Statistics" step, and return p-values for each 20kb bins
@@ -63,7 +69,20 @@ Compare two cell lines with two replicates each, take mean (MEAN) and standard d
 python residual_4datasets_compare_Pvalue_TSA2.0.py -c1r1 cell1Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c1r2 cell1Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r1 cell2Rep1_TSA-Seq_hanning_20kbx21_maxmin.wig -c2r2 cell2Rep2_TSA-Seq_hanning_20kbx21_maxmin.wig -o cell2-cell1_maxmin -o cell2-cell1_maxmin_Pvalue -t aa -g utilities/hg38M.genome -w 20000 -mean MEAN -std STD
 ```
 
-This code will generate a wig file (cell2-cell1_maxmin_Pvalue.wig) and a corresponding bigwig file to show P-values 20kb bins genome-wide.
+This code will generate a wig file and a bw file (cell2-cell1_maxmin_Pvalue.wig, cell2-cell1_maxmin_Pvalue.wig) to show P-values for each 20kb bin genome-wide.
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Figures 2e (bottom), 2f (P-value track), Supplementary Figures 10a,c (bottom), 10b,d (P-value track), 11a (bottom), 11b (P-value track) were generated by this code.
 
