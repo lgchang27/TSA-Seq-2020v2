@@ -55,7 +55,7 @@ For regions with signals in cell type 2 significantly bigger than cell type 1: t
 
 For regions with signals in cell type 1 significantly bigger than cell type 2: this code will output a wig file (otherwaycell2-cell1_maxmin.wig) and a bed file (otherwaycell2-cell1_maxmin.bed) for all 20kb bins with residuals between the two cell lines, and a bed file for segmented domains (otherwaycell2-cell1_maxmin_mergeAdjacent.bed) with mean 20kb-binned residuals for each domain. And it will also output corresponding .bw and .bb files for visualizaiton in genome browser.
 
-This code will also output a replicate-mean signal .bw file for each cell line.
+This code will also output a replicate-mean signal .wig and a corresponding .bw file for each cell line (cell1_maxmin_ReplicateMean.wig, cell1_maxmin_ReplicateMean.bw, cell2_maxmin_ReplicateMean.wig, cell2_maxmin_ReplicateMean.bw).
 
 This code will also output a 20kb-binned residual distribution and fit of gaussian distribution.
 
@@ -85,7 +85,7 @@ For genes within domains that are closer to speckles (significantly higher SON T
 ```shell
 python TX_change_v2_TSA2.0.py -b HFF-H1_maxmin_mergeAdjacent.bed -g1 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_HFF_GSE100576.txt -g2 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_H1.txt -o HFF-H1 -geneID HFF-H1_geneID -y HFF/H1
 
-# This code will generate a scatter plot showing log2-fold change of HFF/H1 against domain mean rescaled TSA-Seq score change for all protein coding genes within the domains with significantly higher SON TSA-Seq score in HFF than in H1.
+# This code will generate a scatter plot showing log2-fold change of HFF/H1 against domain mean rescaled TSA-Seq score changes for all protein coding genes within the domains with significantly higher SON TSA-Seq score in HFF than in H1.
 
 # This code will also report a number for all the genes within the domains and a number for genes with biased expression (log2-fold change of HFF/H1 > 0) comparing the two cell lines.
 
@@ -98,7 +98,7 @@ For genes within domains that are closer to speckles (significantly higher SON T
 ```shell
 python TX_change_otherway_v2_TSA2.0.py -b otherwayHFF-H1_maxmin_mergeAdjacent.bed -g1 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_HFF_GSE100576.txt -g2 ./TSA-Seq-2.0-Analysis/SPAD/Expression/Report/gencode_expr_H1.txt -o otherwayHFF-H1 -geneID otherwayHFF-H1_geneID -y HFF/H1
 
-# This code will generate a scatter plot showing log2-fold changes of HFF/H1 against domain mean rescaled TSA-Seq score change for all protein coding genes within the domains with significantly higher SON TSA-Seq score in H1 than in HFF.
+# This code will generate a scatter plot showing log2-fold changes of HFF/H1 against domain mean rescaled TSA-Seq score changes for all protein coding genes within the domains with significantly higher SON TSA-Seq score in H1 than in HFF.
 
 # This code will also report a number for all the genes within the domains and a number for genes with biased expression (log2-fold change of HFF/H1 < 0) comparing the two cell lines.
 
@@ -137,9 +137,9 @@ Take the bed files (HFF-H1_maxmin_mergeAdjacent.bed and otherwayHFF-H1_maxmin_me
 ```shell
 python DE_TSA_pos_v2_TSA2.0.py -b HFF-H1_maxmin_mergeAdjacent.bed -csv DE/20190421_HFFvsH1_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv -o DE_HFF-H1 -overlap_geneID relocated -nonOverlap_geneID not_relocated -all_geneID all_gene -y HFF/H1
 ```
-This code will 1) generate 3 gene lists with chromosome and positions (relocated, not_relocated, all_gene); 2) report gene number for the three lists; 3) plot a box plot to compare log2-fold changes (HFF/H1) for relocated vs not_relocated genes and calculate a P-value with two-tailed t-test.
+This code will 1) generate 3 gene lists with chromosome and positions (relocated, not_relocated, all_gene); 2) report gene number for the three lists; 3) plot a box plot to compare log2-fold changes (HFF/H1) for relocated vs not_relocated genes and calculate a P-value with Welch's t-test.
 
-Take the three gene lists (relocated, not_relocated, all_gene) and take the bigwig files for rescaled TSA-Seq scores (mean values of biological replicates, generated in the "Identify changed domains" step), generate scatter plots to compare their rescaled TSA-Seq scores in the two cell lines:
+Take the three gene lists (relocated, not_relocated, all_gene) and take the .bw files for rescaled TSA-Seq scores (mean values of biological replicates, generated in the "Identify changed domains" step, HFF_maxmin_ReplicateMean.bw and H1_maxmin_ReplicateMean.bw), generate scatter plots to compare their rescaled TSA-Seq scores in the two cell lines:
 
 all_gene:
 ```shell
@@ -158,18 +158,18 @@ python gene_percentile_TSA2.0.py -g not_relocated -p1 HFF_maxmin_ReplicateMean.b
 
 In the scatter plots, dashed lines show the threshold to call significantly changed domains identified in the "Statistics" step.
 
-Also use the relocated and not_relocated lists to do gene ontology analysis (see paper Methods).
+Use the relocated and not_relocated lists to do gene ontology analysis (see paper Methods).
 
-Supplementary Figures 12a,b were generated by this set of codes.
+Figures 4A,B were generated by this set of codes.
 
 #### For DE genes with significantly higher expression in H1:
 
 ```shell
 python DE_TSA_pos_v2_TSA2.0.py -b otherwayHFF-H1_maxmin_mergeAdjacent.bed -csv DE/20190421_H1vsHFF_2folds_padj0.01-DESeq2-results-with-normalized-counts-protein-coding.csv -o DE_otherwayHFF-H1 -overlap_geneID relocated -nonOverlap_geneID not_relocated -all_geneID all_gene -y H1/HFF
 ```
-This code will 1) generate 3 gene lists with chromosome and positions (relocated, not_relocated, all_gene); 2) report gene number for the three lists; 3) plot a box plot to compare log2-fold changes (H1/HFF) for relocated vs not_relocated genes and calculate a P-value with two-tailed t-test.
+This code will 1) generate 3 gene lists with chromosome and positions (relocated, not_relocated, all_gene); 2) report gene number for the three lists; 3) plot a box plot to compare log2-fold changes (H1/HFF) for relocated vs not_relocated genes and calculate a P-value with Welch's t-test.
 
-Take the three gene lists (relocated, not_relocated, all_gene) and take the bigwig files for rescaled TSA-Seq scores (mean values of biological replicates, generated in the "Identify changed domains" step), generate scatter plots to compare their rescaled TSA-Seq scores in the two cell lines:
+Take the three gene lists (relocated, not_relocated, all_gene) and take the .bw files for rescaled TSA-Seq scores (mean values of biological replicates, generated in the "Identify changed domains" step, HFF_maxmin_ReplicateMean.bw and H1_maxmin_ReplicateMean.bw), generate scatter plots to compare their rescaled TSA-Seq scores in the two cell lines:
 
 all_gene:
 ```shell
@@ -188,6 +188,6 @@ python gene_percentile_TSA2.0.py -g not_relocated -p1 HFF_maxmin_ReplicateMean.b
 
 In the scatter plots, dashed lines show the threshold to call significantly changed domains identified in the "Statistics" step.
 
-Also use the relocated and not_relocated lists to do gene ontology analysis (see paper Methods).
+Use the relocated and not_relocated lists to do gene ontology analysis (see paper Methods).
 
-Supplementary Figures 12d,e were generated by this set of codes.
+Figures 4D,E were generated by this set of codes.
