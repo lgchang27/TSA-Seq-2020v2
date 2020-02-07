@@ -1,4 +1,4 @@
-# TSA-Seq-2.0
+# TSA-Seq analysis
 
 ## TSA-Seq normalization
 
