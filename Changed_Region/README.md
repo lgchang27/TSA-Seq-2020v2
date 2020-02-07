@@ -59,7 +59,7 @@ This code will also output a replicate-mean signal .bw file for each cell line.
 
 This code will also output a 20kb-binned residual distribution and fit of gaussian distribution.
 
-Figures 3A,B (middle bars), Supplementary Figures 6A,B,D,E (middle bars), 8A-D (middle bars) were generated from the _mergeAdjacent.bb files.
+Figures 3A,B (middle bars), Supplementary Figures 6A,B,D,E (middle bars), 8A-D (middle bars), 10 (middle bars in each panel) were generated from the _mergeAdjacent.bb files.
 
 ## Calculate genome-wide P-values
 Compare two cell lines with two replicates each, take mean (MEAN) and standard diviation (STD) generated from the "Statistics" step, and return p-values for each 20kb bins
