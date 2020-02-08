@@ -77,16 +77,16 @@ def Main():
     
     '''Calculate FPKM log2-fold changes and collect the rescaled TSA-Seq score residuals'''
     FPKM_fold_change=[]
-    percentile_change=[]
+    percentile_array=[]
     aa=0
     bb=0
     for i in range (len(FPKMarray1)):
         fpkmFoldChange=np.log2((FPKMarray1[i][0]+0.1)/(FPKMarray2[i][0]+0.1))
         FPKM_fold_change.append(fpkmFoldChange)
         if FPKMarray1[i][1]==FPKMarray2[i][1]:
-            percentileChange=FPKMarray1[i][1]
-            percentile_change.append(percentileChange*(-1))  #the cell line comparison to identify chnaged domains is directional, so here change the negative residuals to positive values for plotting
-        if fpkmFoldChange < 0:
+            percentileValue=FPKMarray1[i][1]
+            percentile_array.append(percentileValue)
+        if fpkmFoldChange > 0:
             if FPKMarray1[i][2]!=FPKMarray2[i][2]:
                 print "The gene id in the two arrays is different"
             print >>geneIDout, '%s' % (str(FPKMarray1[i][2]))
@@ -98,13 +98,13 @@ def Main():
     print 'biased expressed gene number: '+str(aa) 
     print 'unbiased expressed gene number: '+str(bb) 
     print 'FPKM_fold_change: n='+str(len(FPKM_fold_change))
-    print 'percentile_change: n='+str(len(percentile_change))
-    if len(FPKM_fold_change) != len(percentile_change):
+    print 'percentile_array: n='+str(len(percentile_array))
+    if len(FPKM_fold_change) != len(percentile_array):
         print "The numbers in the two arrays are different"
         sys.exit("terminated")   
 
     '''Scatter plot'''
-    plt.scatter(percentile_change,FPKM_fold_change,marker=',', color='black', s=2)
+    plt.scatter(percentile_array,FPKM_fold_change,marker=',', color='black', s=2)
     #plt.xlim (10,30)   #reset range
     #plt.ylim (-15,15)  #reset range  
     plt.xlabel('Domain mean percentile in cell1\n'+args.output,fontsize=15)       
