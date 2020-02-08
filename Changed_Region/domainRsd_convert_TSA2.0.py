@@ -4,8 +4,8 @@
 
 '''
 This code will take the _mergeAdjacent.bed file for the changed domains, get the region mean percentile/maxminNormScore in both cell lines (replicate mean) for each region, and convert the percentile/maxminNormScore to distance based on a provided score_distance dictionary in K562
-This code will calculate the distance residuals between the converted distences in the two cell lines for each region, always cell line 2 - cell line 1.
-This code will output a .bed file with five columns: chrom, start, end, distance(cell1), distance(cell2), distance residual (cell2-cell1)
+This code will calculate the distance residuals between the converted distences in the two cell lines for each region, always -(cell line 2 - cell line 1).
+This code will output a .bed file with five columns: chrom, start, end, distance(cell1), distance(cell2), distance residual (cell1-cell2)
 '''
 
 import os,sys,argparse
