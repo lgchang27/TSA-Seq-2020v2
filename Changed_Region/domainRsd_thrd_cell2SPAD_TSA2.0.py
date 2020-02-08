@@ -1,11 +1,12 @@
 #!/usr/bin/python
 # Programmer : Liguo Zhang
-# Date: 20190605
+# Date: 20191217
 
 '''
-This code will take the _mergeAdjacent.bed file for the changed domains, get the region mean percentile/maxminNormScore in both cell lines (replicate mean) for each region, and convert the percentile/maxminNormScore to distance based on a provided score_distance dictionary in K562
-This code will calculate the distance residuals between the converted distences in the two cell lines for each region, always -(cell line 2 - cell line 1).
-This code will output a .bed file with 6 columns: chrom, start, end, distance(cell1), distance(cell2), distance residual (cell1-cell2)
+Take the _mergeAdjacent.bed file for the changed domains, add other values, always cell2-cell1
+Output bed format: chr  start  end  cell1_percentile  cell2_percentile  cell2-cell1_percentile
+Take replicate mean
+Only keep domains above a threshold
 '''
 
 import os,sys,argparse
@@ -18,11 +19,11 @@ def ParseArg():
     ''' This Function Parse the Argument '''
     p=argparse.ArgumentParser( description = 'Example: %(prog)s -h', epilog='Library dependency :')
     p.add_argument('-b','--bed',type=str,dest="bed",help="bed file ")
-    p.add_argument('-d','--dic',type=str,dest="dic",help="dic file ")
-    p.add_argument('-p1','--perc1',type=str,dest="perc1",help="TSA-Seq percentile or miaxmin normalized score file1")
-    p.add_argument('-p2','--perc2',type=str,dest="perc2",help="TSA-Seq percentile or miaxmin normalized score file2")
-    p.add_argument('-p3','--perc3',type=str,dest="perc3",help="TSA-Seq percentile or miaxmin normalized score file3")
-    p.add_argument('-p4','--perc4',type=str,dest="perc4",help="TSA-Seq percentile or miaxmin normalized score file4")
+    p.add_argument('-p1','--perc1',type=str,dest="perc1",help="percentile file1 (cell line 1 replicate 1)")
+    p.add_argument('-p2','--perc2',type=str,dest="perc2",help="percentile file2 (cell line 1 replicate 2)")
+    p.add_argument('-p3','--perc3',type=str,dest="perc3",help="percentile file3 (cell line 2 replicate 1)")
+    p.add_argument('-p4','--perc4',type=str,dest="perc4",help="percentile file4 (cell line 2 replicate 2)")
+    p.add_argument('-g','--genome',type=str,dest="genome",help="genome file")
     p.add_argument('-o','--output',type=str,dest="output",help="output file name")
     return p.parse_args()
 
@@ -61,20 +62,10 @@ def Main():
     perc_hash2 = CollectValue (args.perc2)
     perc_hash3 = CollectValue (args.perc3)
     perc_hash4 = CollectValue (args.perc4)
+    newBed=WriteToFile(args.output+".bed")
+    newBed1=WriteToFile(args.output+"_browser.bed")
     
-    '''read dic'''
-    dic={}
-    for line in ReadFromFile(args.dic):
-        if line.strip().startswith('#') or line.strip() == '' or line.strip() == '\n':
-            continue
-        row = line.strip().split()
-        if row[0] == 'percentile':
-            continue
-        dic[str(row[0])]=float(row[2])   # maxmin score and predicted mean distance in K562
-    print dic
-
-    newBed=WriteToFile(args.output)
-    '''read bed file for the changed regions'''
+    '''read bed file'''
     chrom=None
     for line in ReadFromFile(args.bed):
         row = line.strip().split()
@@ -117,11 +108,19 @@ def Main():
         cell2rep2 = np.mean(array4)+50
         cell1 = (cell1rep1+cell1rep2)/2
         cell2 = (cell2rep1+cell2rep2)/2
-        
-        distance1=dic[str(int(np.round(cell1)))]
-        distance2=dic[str(int(np.round(cell2)))]   
-        distanceRsd = -(distance2 - distance1)        ######for distance rsd, take the negate
-        print >>newBed, "%s\t%s\t%s\t%f\t%f\t%f" % (chrom, start, end, distance1, distance2, distanceRsd)          
+        percentileRsd = cell2 - cell1   
+        #print percentileRsd
+        if cell2 >= 95:
+            print >>newBed, "%s\t%s\t%s\t%f\t%f\t%f" % (chrom, start, end, cell1, cell2, percentileRsd)
+            print >>newBed1, "%s\t%s\t%s\t%f" % (chrom, start, end, percentileRsd) 
+    newBed.flush()
+    newBed1.flush()
+
+    sort="sort -k1,1 -k2,2n %s > %s" % (args.output+"_browser.bed", args.output+"_browser.sorted.bed")
+    bed2bb = "utilities/bedToBigBed %s %s %s" % ( args.output+'_browser.sorted.bed', args.genome, args.output+'_browser.bb')
+    os.system(sort)
+    os.system(bed2bb)
+
 
 if __name__=="__main__":
     Main()
