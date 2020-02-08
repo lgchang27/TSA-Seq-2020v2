@@ -3,7 +3,7 @@ This set of codes was used for cell type pair-wise comparison to identify change
 
 This set of codes was also used to compare K562 TSA-Seq data without and with heat shock (37C vs 42C 30min).
 
-Examples below are shown using cell type paire-wise comparison.
+Examples below are shown using cell type pair-wise comparison.
 
 ## Rescale TSA-Seq scores
 Rescale TSA-Seq enrichment scores (20kb bin) linearly between their min and max values to a new 1-100 scale and round up to integers. 
