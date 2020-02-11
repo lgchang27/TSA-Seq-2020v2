@@ -2,7 +2,7 @@
 
 Python 2.7
 
-Required libraries: bx-python, numpy, scipy, progressbar, pytabix, pyfasta
+Required packages: bx-python, numpy, scipy, progressbar, pytabix, pyfasta
 
 ## TSA-Seq normalization
 
