@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Programmer : Liguo Zhang, modified form Yang Zhang's code
+# Programmer : Liguo Zhang, modified from Yang Zhang's code
 # Date: 
 # Last-modified: 1 Aug 2018
 # Used for 20kb non-sliding window, take wig file to smooth and generate smoothed wig, take average for a bigger window and generate wig
@@ -27,6 +27,7 @@ def ParseArg():
 
 def Smooth(x,window_len=21):
     ''' This function defines 'hanning' smoothing method'''
+    s = np.r_[2*x[0]-x[window_len-1::-1],x,2*x[-1]-x[-1:-window_len:-1]]
     w=eval('np.hanning(window_len)')
     y=np.convolve(w/w.sum(),s,mode='same')
     return y[window_len:-window_len+1]
