@@ -5,7 +5,7 @@ CUT&RUN data in H1 and HFF is downloaded from 4DN data portal. First, we trimmed
 
 ILLUMINACLIP:$adapter/TruSeq3-PE-2.fa:2:15:4:4:true LEADING:20 TRAILING:20 SLIDINGWINDOW:4:15 MINLEN:25.
 
-Then we used bowtie 2 (2) to align the trimmed reads to reference genome hg38. We set the minimum fragment length to be 10 and maximum fragment length to be 700. Then we sort and remove duplicate reads with samtools (3). Finally, we used MACS2 (4) to generate log2 fold change tracks and perform peak calling. 
+Then we used bowtie 2 (2) to align the trimmed reads to reference genome hg38. We set the minimum fragment length to be 10 and maximum fragment length to be 700. Then we sort and remove duplicate reads with samtools (3). Finally, we used MACS2 (4) to generate fold enrichment (FE) tracks and perform peak calling. 
 
 Reference:
 
