@@ -10,4 +10,4 @@ python TSA_smooth_hanningFor20kbNonsliding_TSA2.0.py --wig TSA-Seq_20kb.wig -w 2
 #Genome size file hg38F.genome was for female cell line (K562), hg38M.genome was for male cell lines (H1, HCT116, HFFc6).
 ```
 
-Figures 2D (top), 3A (top), 3B (top), 5B (top), Supplementary Figures 6A (top), 6B (top), 6D (top), 6E (top), 8A (top), 8B (top), 8C (top), 8D (top), 9B, 10 (top in each panel) were generated from the output .bw files (TSA-Seq_hanning_20kbx21.bw) by this code.
+Figures 2D (top), 3A (top), 3B (top), 5B (top), Supplementary Figures 6A (top), 6B (top), 6D (top), 6E (top), 9A (top), 9B (top), 9C (top), 9D (top), 10B, 11 (top in each panel) were generated from the output .bw files (TSA-Seq_hanning_20kbx21.bw) by this code.
