@@ -1,0 +1,257 @@
+---
+title: "TSA-seq 2.0 code for Sup Fig 5"
+output: html_notebook
+---
+
+
+```{r}
+library(ggplot2)
+library(reshape2)
+library(scales)
+library(tidyr)
+library(tibble)
+library(plyr)
+library(patchwork)
+library(colorspace)
+library(org.Hs.eg.db)
+
+# parameters
+col_decile = rev(c('239,62,35', '246,138,31', '245,186,24', '244,235,24', '156,203,60', '76,183,72', '20,171,188', '0,120,178', '58,54,148', '113,44,145'))
+col_decile = sapply(strsplit(col_decile, ","), function(x)
+    rgb(x[1], x[2], x[3], maxColorValue=255))
+col_vigintile = c()
+for (idx in seq(9)) {
+  col_vigintile = c(col_vigintile, c(col_decile[idx], hex(mixcolor(alpha = 0.5, color1 = hex2RGB(col_decile[idx]), color2 = hex2RGB(col_decile[idx+1])))))
+}
+col_vigintile = c(col_vigintile, hex(mixcolor(alpha = 0.5, color1 = hex2RGB(col_vigintile[18]), color2 = hex2RGB("#FF0000"))), "#FF0000")
+MIN_SIZE = 1000
+
+
+# functions to parse annotation result
+decile_analysis_histone <- function(cell_name, decile_col){
+  # load the table
+  table <- read.table(file=paste0("result/hg38_20kb_", cell_name, ".txt"), header = T, sep = '\t', comment.char = "", check.names = F)
+  # drop wins with zero size
+  table <- subset(table, size > MIN_SIZE)
+  # drop some columns
+  table$start <- NULL
+  table$stop <- NULL
+  # calculate the deciles
+  SON_deciles = quantile(table[, decile_col], probs = seq(0, 1, 0.1), na.rm = T)
+  table$deciles <- cut(table[, decile_col], breaks = SON_deciles, labels = paste0("Decile ", seq(1,10,1)))
+  # calculate the half-deciles
+  SON_vigintile = quantile(table[, decile_col], probs = seq(0, 1, 0.05), na.rm = T)
+  #table$vigintile <- cut(table[, decile_col], breaks = SON_vigintile, labels = paste0("Vigintile ", seq(1,20,1)))
+  # melt the data frame
+  table <- melt(table, id.vars = c("#chrom", "mid", "size", "deciles"), variable.name = "name", value.name = "value")
+  # check how many data are there
+  length(unique(table$name))
+  # split columns
+  table <- table %>% separate(name, c("cell", "target", "lab", "type", "id"), sep = '_', extra = "drop", fill = "right")
+  # drop NA 
+  table <- subset(table, deciles %in% paste0("Decile ", seq(1,10,1)))
+  
+  # for peaks: add the value as peak length in TSA-seq paper
+  if ("peaks" %in% table$type) {
+    table_peak_length <- subset(table, type == "peaks")
+    table_peak_length <- ddply(table_peak_length, .(deciles, cell, target, lab, type, id), summarize, peak_length = sum(value))
+    table_peak_length <- ddply(table_peak_length, .(cell, target, lab, type, id), transform, total_peak_length = sum(peak_length))
+    table_peak_length$percent <- table_peak_length$peak_length/table_peak_length$total_peak_length
+    table_peak_length$name = paste(table_peak_length$target, table_peak_length$id, sep = '_')
+    # plot
+    plot_peak_length <- ggplot(table_peak_length, aes(x = deciles, y = percent, fill = deciles)) +
+      geom_col() +
+      geom_hline(yintercept = 0.0, size = 1) +
+      xlab("") +
+      ylab("Percent") +
+      scale_y_continuous(labels = percent, expand = c(0,0)) +
+      scale_fill_manual(name = "Deciles", values = col_decile) + 
+      facet_wrap(~ name, ncol = 6) +
+      theme_bw() +
+      theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+      theme(panel.border = element_blank()) +
+      theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+      theme(axis.title.y = element_text(size=rel(1.3),margin=margin(0,10,0,0))) +
+      theme(axis.title.x = element_text(size=rel(1.3),margin=margin(10,0,0,0))) +
+      #theme(axis.text.x = element_text(size=rel(1.5), color = "black", angle = 45, hjust = 1, vjust = 1)) + 
+      theme(axis.text.x = element_blank()) +
+      theme(axis.text.y = element_text(size=rel(1.5), color = "black")) +
+      theme(axis.line = element_line(color="black")) +
+      theme(axis.ticks.x = element_blank()) +
+      theme(strip.text = element_text(size=rel(1.0), face="bold")) +
+      theme(strip.background = element_blank())
+    pdf(file = paste0("figure_", cell_name, "_peak_length.pdf"), width = 15, height = 8)
+    print(plot_peak_length)
+    dev.off()
+  }
+  
+  # for p-value signal use the average
+  if ("pval" %in% table$type) {
+    table_pval_mean <- subset(table, type == "pval")
+    table_pval_mean$name = paste(table_pval_mean$target, table_pval_mean$id, sep = '_')
+    signal_list = unique(table_pval_mean$name)
+    # plot
+    pdf(file = paste0("figure_", cell_name, "_pval_boxplot.pdf"), width = 6, height = 4)
+    for (data_name in signal_list){
+      data <- subset(table_pval_mean, name == data_name)
+      data_y_max = quantile(data$value, probs = 0.99, na.rm = T)
+      plot_pval <- ggplot(data, aes(x = deciles, y = value, fill = deciles)) +
+        #geom_violin(trim = T) +
+        geom_boxplot(outlier.size = 0.7, outlier.shape = NA, width = 0.7) +
+        coord_cartesian(ylim = c(0, data_y_max)) +
+        xlab("") +
+        ylab("-log10 (P value)") +
+        ggtitle(data_name) +
+        scale_y_continuous(expand = c(0,0)) +
+        scale_fill_manual(name = "Deciles", values = col_decile) + 
+        #facet_wrap(~ name, ncol = 6) +
+        theme_bw() +
+        theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+        theme(panel.border = element_blank()) +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        theme(axis.title.y = element_text(size=rel(1.3),margin=margin(0,10,0,0))) +
+        theme(axis.title.x = element_text(size=rel(1.3),margin=margin(10,0,0,0))) +
+        #theme(axis.text.x = element_text(size=rel(1.5), color = "black", angle = 45, hjust = 1, vjust = 1)) + 
+        theme(axis.text.x = element_blank()) +
+        theme(axis.text.y = element_text(size=rel(1.5), color = "black")) +
+        theme(axis.line = element_line(color="black")) +
+        theme(axis.ticks.x = element_blank()) +
+        theme(strip.text = element_text(size=rel(1.0), face="bold")) +
+        theme(strip.background = element_blank())
+      print(plot_pval)
+    }
+    dev.off()
+  }
+  
+  return(list(data = table, decile_cutoff = SON_deciles, vigintile_cutoff = SON_vigintile))
+}
+
+# plot scatterplot between gene expression and TSA-seq scores
+plot_scatterplot <- function(expr_file, son_data, fig_file, CELL_TYPE) {
+  #expr_file = "report/gencode_expr_K562.txt"
+  #son_data = data_K562
+  #fig_file = "figure_K562_SON_FPKM_scatterplot.test.pdf"
+  #CELL_TYPE = "K562"
+  expr_table <- read.table(file = expr_file, header = T, sep = '\t', comment.char = "", check.names = F)
+  # set minimal FPKM
+  min_FPKM = 0.001
+  # calculate FPKM
+  fpkm_cutoff = c(seq(0, 0.9, 0.1), seq(0.95, 1.01, 0.05))
+  fpkm_cutoff_label = c(paste0("Expr ", seq(0,80,10), '-', seq(10, 90, 10), "%"),  paste0("Expr ", seq(90, 96, 5), '-', seq(95, 101, 5), "%"))
+  expr_percentile = quantile(subset(expr_table, FPKM > min_FPKM)[,"FPKM"], probs = fpkm_cutoff, na.rm = T)
+  expr_table$FPKM_percentile = "Non-expressed"
+  idx_list = which(expr_table$FPKM > min_FPKM)
+  value_list = as.character(cut(expr_table[which(expr_table$FPKM > min_FPKM), "FPKM"],
+                                breaks = expr_percentile,
+                                labels = fpkm_cutoff_label,
+                                include.lowest = T))
+  expr_table[idx_list, "FPKM_percentile"] = value_list
+  expr_table$FPKM_percentile <- factor(expr_table$FPKM_percentile, levels = c(rev(fpkm_cutoff_label), "Non-expressed"))
+  # remove unexpressed gene
+  expressed_table <- subset(expr_table, FPKM > min_FPKM)
+  
+  # calculatae the percentile of FPKM
+  expressed_table$FPKM_rank <- rank(expressed_table$FPKM)/nrow(expressed_table)
+  # calculate log10 of FPKM
+  expressed_table$FPKM_log10 <- log10(expressed_table$FPKM)
+  #
+  expressed_table$SON_score <- expressed_table[, paste0(CELL_TYPE, "_SON_TSA_2.0")]
+  #
+  expressed_table <- subset(expressed_table, !is.na(SON_score))
+  #
+  cal_per <- function(win_list, gene_value) {
+      if (is.na(gene_value)) {
+        return(NA)
+      } else if (gene_value < min(win_list, na.rm = T)) {
+        return(0.0)
+      } else if (gene_value > max(win_list, na.rm = T)) {
+        return(1.0)
+      } else {
+        return(sum(gene_value >= win_list)/length(win_list))
+      }
+  }
+  son_score_list = subset(son_data$data, target == "SON" & type == "2.0")$value
+  expressed_table$SON_percentile = unlist(lapply(expressed_table$SON_score, function(x) cal_per(son_score_list, x)))
+  #
+  expressed_table$SON_rank <- rank(expressed_table$SON_score)/nrow(expressed_table)
+  #
+  group_list = fpkm_cutoff_label
+  col_list = c(col_decile, "#b10026")
+  #
+  SON_min = min(expressed_table$SON_score, na.rm = T)
+  SON_max = max(expressed_table$SON_score, na.rm = T)
+  #
+  data_vigintile <- data.frame(cutoff = son_data$vigintile_cutoff, name = names(son_data$vigintile_cutoff))
+  # 
+  pdf(file = fig_file, width = 9, height = 8) 
+  lm_eqn <- function(df, method){
+    if (method == '1') {
+      m <- lm(FPKM_log10 ~ SON_score, df);
+    } else if (method == '2') {
+      m <- lm(FPKM_rank ~ SON_percentile, df)
+    } else if (method == '3') {
+      m <- lm(FPKM_rank ~ SON_rank, df)
+    }
+    eq <- substitute(italic(y) == a + b %.% italic(x)*","~~italic(r)^2~"="~r2, 
+                     list(a = format(unname(coef(m)[1]), digits = 2),
+                          b = format(unname(coef(m)[2]), digits = 2),
+                          r2 = format(summary(m)$r.squared, digits = 3)))
+    as.character(as.expression(eq));
+  }
+  plot_top_density <- ggplot(expressed_table, aes(x = SON_percentile, color = FPKM_percentile)) +
+    geom_density(alpha = 0.4, size = 1.2) +
+    coord_cartesian(xlim = c(0, 1)) +
+    scale_x_continuous(expand = c(0,0)) +
+    scale_y_continuous(position = "left") +
+    scale_color_manual(name = "Expr. Group", values = setNames(col_list, group_list)) +
+    xlab("") +
+    ylab("Density") +
+    theme_bw() +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+    theme(panel.border = element_blank()) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.text.x = element_blank()) +
+    theme(axis.text.y = element_text(size=rel(1), color = "black")) +
+    theme(axis.line = element_line(color="black")) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(legend.position = "none")
+  plot_scatter_percentile <- ggplot(expressed_table, aes(x = SON_percentile, y = FPKM_rank, color = FPKM_percentile)) +
+    #geom_point(alpha = 0.9, color = "lightgrey", size = 0.5) +
+    geom_point(alpha = 0.5, size = 0.6) +
+    scale_color_manual(name = "Expr. Group", values = setNames(col_list, group_list)) +
+    #annotate(geom = "text", x = 0.4, y = 0.8, label = lm_eqn(expressed_table, method = '2'), parse = T, size = 7) +
+    #geom_smooth(aes(color = NULL), method = lm, se = FALSE) +
+    coord_cartesian(xlim = c(0, 1)) +
+    scale_x_continuous(expand = c(0,0)) +
+    xlab("SON TSA-seq score percentile") +
+    ylab("Gene expression FPKM percentile") +
+    theme_bw() +
+    theme(plot.title = element_text(lineheight=.8, face="bold", size=rel(2))) +
+    theme(panel.border = element_blank()) +
+    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    theme(axis.title.y = element_text(size=rel(1.5),margin=margin(0,10,0,0))) +
+    theme(axis.title.x = element_text(size=rel(1.5),margin=margin(10,0,0,0))) +
+    theme(axis.text = element_text(size=rel(1.5), color = "black")) +
+    theme(axis.line = element_line(color="black")) +
+    theme(axis.ticks.x = element_blank())
+  p1 <- plot_top_density + plot_scatter_percentile + plot_layout(nrow = 2, ncol = 1, heights = c(2,6))
+  print(p1)
+  dev.off()
+}
+
+# load data
+data_H1 <- decile_analysis_histone("H1", "H1_SON_TSA_2.0")
+data_K562 <- decile_analysis_histone("K562", "K562_SON_TSA_2.0")
+data_HCT116 <- decile_analysis_histone("HCT116", "HCT116_SON_TSA_2.0")
+data_HFF <- decile_analysis_histone("HFF", "HFF_SON_TSA_2.0")
+
+# generate scatter plots
+plot_scatterplot("report/gencode_expr_H1.txt", data_H1, "figure_H1_SON_FPKM_scatterplot.pdf", "H1")
+plot_scatterplot("report/gencode_expr_K562.txt", data_K562, "figure_K562_SON_FPKM_scatterplot.pdf", "K562")
+plot_scatterplot("report/gencode_expr_HCT116.txt", data_HCT116, "figure_HCT116_SON_FPKM_scatterplot.pdf", "HCT116")
+plot_scatterplot("report/gencode_expr_HFF_GSE100576.txt", data_HFF, "figure_HFF_GSE100576_SON_FPKM_scatterplot.pdf", "HFF")
+plot_scatterplot("report/gencode_expr_HFF_GSE64553.txt", data_HFF, "figure_HFF_GSE64553_SON_FPKM_scatterplot.pdf", "HFF")
+
+```
+
