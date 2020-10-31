@@ -8,7 +8,7 @@ Tested in Linux
 
 ## TSA-Seq normalization
 
-TSA-Seq normalization pipeline and softwares are at https://github.com/zocean/Norma, developed and mainteined by Yang Zhang (CMU). This pipeline will take raw sequencing fastq files (pulldown and input), align reads to genome, remove PCR duplicates, generate TSA-Seq enrichment scores (20kb bin) as .wig and .bw files (e.g. TSA-Seq_20kb.wig, TSA-Seq_20kb.bw)
+TSA-Seq normalization pipeline and softwares are at https://github.com/zocean/Norma, developed and mainteined by Yang Zhang (Ma lab, CMU). This pipeline will take raw sequencing fastq files (pulldown and input), align reads to genome, remove PCR duplicates, generate TSA-Seq enrichment scores (20kb bin) as .wig and .bw files (e.g. TSA-Seq_20kb.wig, TSA-Seq_20kb.bw)
 
 Figures 1E (top), 2A (top), Supplementary Figure 3C were generated from the output .bw files from this set of codes.
 
