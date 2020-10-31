@@ -25,7 +25,7 @@ python TSAtoDistance_v2_TSA2.0.py -i TSA-Seq_hanning_20kbx21.wig -o TSA-Seq_hann
 
 This code will take the parameters y0, A, R0 to convert smoothed TSA-Seq enrichment scores (TSA-Seq_hanning_20kbx21.wig) to distances in um for each 20kb bin (TSA-Seq_hanning_20kbx21_distance.wig, TSA-Seq_hanning_20kbx21_distance.bw).
 
-Figure 1E (middle) and Supplementary Figure 2A (top) were generated from the .bw files (TSA-Seq_hanning_20kbx21_distance.bw) by thie code.
+Figure 1E (middle) and Supplementary Figure 2A (top) were generated from the .bw files (TSA-Seq_hanning_20kbx21_distance.bw) by this code.
 
 ## Residual calculation
 
